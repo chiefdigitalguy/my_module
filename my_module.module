@@ -1,0 +1,116 @@
+<?php
+
+/**
+ * Implements hook_node_info().
+ */
+function my_module_node_info() {
+    $items = array(
+      'user_entry' => array(
+        'name' => t('User Entry'),
+        'base' => 'node_content',
+        'description' => '',
+        'has_title' => '1',
+        'title_label' => t('Title'),
+        'help' => '',
+      ),
+    );
+    drupal_alter('node_info', $items);
+    return $items;
+  }
+function my_module_menu(){
+    $items['my_module_menu/new_form'] = array(
+        'title' => 'Custom Form',
+        'description' => 'My Custom Module Form',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('my_module_form'),
+        'access callback' => TRUE,
+    );
+    return $items;
+}
+function my_module_form($form, &$form_submit){
+    $format = 'd-m-Y H:i';
+    $form['name'] = array(
+        '#title' => t('Full Name'),
+        '#type' => 'textfield',
+        '#description' => 'Please Include First and Last Name',
+        '#required' => 'TRUE',
+    );
+    $form['email'] = array(
+        '#title' => t('Your Email Address'),
+        '#type' => 'textfield',
+        '#description' => 'Format Should Be email@domain.com',
+        '#required' => 'TRUE',
+    );
+    $form['dob'] = array(
+        '#title' => t('Your Date of Birth'),
+        '#type' => 'date',
+        '#date_format' => $format,
+        '#default_value' => array(
+            'month' => format_date(time(), 'custom', 'n'), 
+            'day' => format_date(time(), 'custom', 'j'), 
+            'year' => format_date(time(), 'custom', 'Y'),
+          ),
+        /*'#options' => array(
+            0 => ,
+        ),*/
+        '#description' => 'Use mm/dd/yyyy Format Please',
+        '#required' => 'TRUE',
+    );
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => 'Submit Info',
+    );
+   // $form['#submit'][] = 'my_module_my_form_submit';
+    return $form;
+}
+ 
+function my_module_form_validate($form, &$form_state){
+    //valley logic
+    $user_email = $form_state['values']['email'];
+    $user_dob = $form_state['values']['dob'];
+    $user_name = $form_state['values']['name'];
+    $name_filter = '/^[a-zA-Z ]*$/';
+    //$date_filter = '/^((([1-2][0-9])|([1-9]))/([2])/[0-9]{4})|((([1-2][0-9])|([1-9])|(3[0-1]))/((1[0-2])|([3-9])|([1]))/[0-9]{4})$/';
+    if(!filter_var($user_email, FILTER_VALIDATE_EMAIL)){
+        $emailError = "Invalid format for email";
+        form_set_error('email', t('Invalid Used For Email Address'));
+    }
+
+    if(!preg_match($name_filter, $user_name)){
+        $nameError = "Only Letters and Whitespace allowed";
+        form_set_error('name', t('Name Invalid, Only Use Letters and Spaces'));
+    }
+
+}
+
+function my_module_form_submit($form_id, &$form_state){ //($form, &$form_state)
+    //Submit Logic
+    my_module_save($form_state); 
+}
+function my_module_save($name){
+    module_load_include('inc', 'node', 'node.pages');
+    $newnode = new stdClass();
+    $newnode->language = LANGUAGE_NONE;
+    $newnode->type = "user_entry";
+    /*drupal_set_message('<pre>'. print_r($name['values']['name'], TRUE) .'</pre>');
+    drupal_set_message('<pre>'. print_r($name['values']['dob'], TRUE) .'</pre>');
+    drupal_set_message('<pre>'. print_r($name['values']['email'], TRUE) .'</pre>');*/
+    node_object_prepare($newnode);
+    $newnode->title = "User Entry";
+    $newnode->field_full_name[$newnode->language][0]['value'] = $name['values']['name'];
+    $newnode->field_email_address[$newnode->language][0]['value'] = $name['values']['email'];
+    $newnode->field_date_of_birth[$newnode->language][0]['value']  = $name['values']['dob']['month'].'-'.$name['values']['dob']['day'].'-'.$name['values']['dob']['year'];
+    //strtotime($name['values']['dob']);
+    
+    node_save($newnode);
+    unset($_SESSION['form']);
+    drupal_set_message('Thank You, Your Entry Was Received');
+    drupal_goto();
+
+}
+
+
+//call views function
+function my_module_views_api(){
+    return array('api' => 3.0);
+}

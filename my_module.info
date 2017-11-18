@@ -1,0 +1,9 @@
+name = My Module
+description = Custom Module Adds Custom Content Type, View, Form and Pushes Entries to Custom Nodes
+core = 7.x
+package = Mullings Custom
+
+files[] = my_module.module
+files[] = my_module.tpl.php
+files[] = my_module.install
+files[] = my_module.views_default.inc

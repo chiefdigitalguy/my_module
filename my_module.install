@@ -1,0 +1,179 @@
+<?php
+function my_module_install(){
+     /* set default options for content type 
+     disabled comments, promote to front page 
+     and display author/date */
+     variable_set('comment_user_entry', 0);
+     variable_set('node_submitted_user_entry', 0);
+     variable_set("node_options_user_entry", array('status'));
+     
+    $t= get_t();
+
+    $content_type = array(
+        'type' => 'user_entry',
+        'name' => 'User Entry',
+        'base' => 'node_content',
+        //'title_label' => $t('Title'),
+        'description' => $t('A content type for for storing entered user data'),
+        'body_label' => $t('User Entry'),
+        'custom' => TRUE,
+    );
+
+    $content_type = node_type_set_defaults($content_type);
+    node_add_body_field($content_type);
+    node_type_save($content_type);
+
+        
+   
+    //BASE
+    $fields = array(
+        /*'body' => array(
+            'active' => 1,
+            'cardinality' => 1,
+            'deleted' => 0,
+            'entity_types' => array(
+              0 => 'node',
+            ),
+            'field_name' => 'body',
+            'indexes' => array(
+              'format' => array(
+                0 => 'format',
+              ),
+            ),
+            'locked' => 0,
+            'module' => 'text',
+            'settings' => array(),
+            'translatable' => 0,
+            'type' => 'text_with_summary',
+          ),*/
+        'field_date_of_birth' => array(
+            'active' => 1,
+            'cardinality' => 1,
+            'deleted' => 0,
+            'entity_types' => array(),
+            'field_name' => 'field_date_of_birth',
+            'indexes' => array(
+              'format' => array(
+                0 => 'format',
+              ),
+            ),
+            'locked' => 0,
+            'module' => 'text',
+            'settings' => array(
+              'max_length' => 255,
+            ),
+            'translatable' => 0,
+            'type' => 'text',
+          ),
+        'field_email_address' => array(
+            'active' => 1,
+            'cardinality' => 1,
+            'deleted' => 0,
+            'entity_types' => array(),
+            'field_name' => 'field_email_address',
+            'indexes' => array(
+              'format' => array(
+                0 => 'format',
+              ),
+            ),
+            'locked' => 0,
+            'module' => 'text',
+            'settings' => array(
+              'max_length' => 255,
+            ),
+            'translatable' => 0,
+            'type' => 'text',
+        ),
+        'field_full_name' => array(
+        'active' => 1,
+        'cardinality' => 1,
+        'deleted' => 0,
+        'entity_types' => array(),
+        'field_name' => 'field_full_name',
+        'indexes' => array(
+          'format' => array(
+            0 => 'format',
+          ),
+        ),
+        'locked' => 0,
+        'module' => 'text',
+        'settings' => array(
+          'max_length' => 255,
+        ),
+        'translatable' => 0,
+        'type' => 'text',
+      )
+    );
+    foreach ( $fields as $field){
+        field_create_field($field);
+    }
+    //INSTANCES
+    $instances = array(
+        'field_date_of_birth' => array(
+            'field_name' => 'field_date_of_birth',
+            'label' => $t('Date Of Birth'),
+            'required' => TRUE,
+            'widget' => array(
+                'type' => 'text_textfield'
+            ),
+        ),
+        'field_email_address' => array(
+            'field_name' => 'field_email_address',
+            'label' => $t('Email Address'),
+            'required' => TRUE,
+            'widget' => array(
+                'type' => 'text_textfield'
+            ),
+        ),
+        'field_full_name' => array(
+            'field_name' => 'field_full_name',
+            'label' => $t('Full Name'),
+            'required' => TRUE,
+            'widget' => array(
+                'type' => 'text_textfield'
+            ),
+        ),
+        /*'body' => array(
+            'field_name' => 'body',
+            'label' => $t('Body'),
+            'required' => TRUE,
+            'widget' => array(
+                'type' => 'text_textfield'
+            ),
+        ),*/
+
+    );
+    foreach($instances as $instance) {
+            $instance['entity_type'] = 'node';
+            $instance['bundle'] = 'user_entry';
+
+            field_create_instance($instance);
+        }
+
+        
+
+        my_module_create_menu_items();
+}
+
+function my_module_create_menu_items(){
+  $items = array(
+     'link_title' => st('User Survey'),
+     'link_path' => 'my_module_menu/new_form',
+     'menu_name' => 'main-menu',
+    );
+  menu_link_save($items);
+  menu_rebuild();
+  }
+  function my_module_uninstall() {
+    
+     $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+     $result = db_query($sql, array(':type' => 'user_entry'));
+     $nids = array();
+     foreach ($result as $row) {
+       $nids[] = $row->nid;
+     }
+    
+     //delete user_entry content type and nodes
+     node_delete_multiple($nids);
+     node_type_delete('user_entry');
+    }
